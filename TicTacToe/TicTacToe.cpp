@@ -6,6 +6,8 @@
 
 int main()
 {
+
+	int JAAAA = 5;
     return 0;
 }
 
