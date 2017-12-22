@@ -219,14 +219,17 @@ int main() {
 	//****************for neural net********************************
 	vector<unsigned> topology = { 9,18,1 };
 	Net my_net(topology);
+	Net my_net2(topology);
 	vector<double> input_vals, target_vals, result_vals;
+	vector<double> input_vals2, target_vals2, result_vals2;
 	int training_pass = 0;
 
 	//****************for neural net********************************
 
 
 	//*************for change in values *************************
-	double momentum=;
+	double momentum=1.0;
+	double force =0.2;
 
 
 	//*************for change in values *************************
@@ -367,32 +370,8 @@ int main() {
 			board_all_states.push_back(board_state);
 			BoardData insert_state;
 
-
-			int tester = 0;
-			for (int i = 0; i < board_data_base.size(); i++) {
-
-
-
-				if (board_state == board_data_base[i].board_state) {
-
-					board_data_base[i].times_played++;
-					break;
-
-				}
-
-				else if (i == board_data_base.size() - 1) {
-					insert_state.board_state = board_state;
-					insert_state.times_played = 1;
-					insert_state.value = 0;
-					board_data_base.push_back(insert_state);
-
-					//cout << tester << endl;
-				}
-
-
-
-
-			}
+			
+		
 
 
 
@@ -408,7 +387,7 @@ int main() {
 
 			}
 
-			if(circlewon%100==0){
+			if(circlewon%75==0){
 			graphic_functions::draw_raw_board(window, 3);
 			graphic_functions::draw_figures(window, sprites);
 			window.display();
@@ -420,6 +399,27 @@ int main() {
 
 			int who_won = check_for_win(board_state);
 
+
+			//insert states into the database
+			int dummy = 0;
+			for (int i = 0; i < board_data_base.size(); i++) {
+				
+				if (board_state == board_data_base[i].board_state) {
+
+					board_data_base[i].times_played++;
+					break;
+
+				}
+				else if (i == board_data_base.size() - 1) {
+					dummy++;
+					insert_state.board_state = board_state;
+					insert_state.times_played = 1;
+					insert_state.value = 0;
+					board_data_base.push_back(insert_state);
+
+					//cout << tester << endl;
+				}
+			}
 			
 
 			
@@ -434,7 +434,24 @@ int main() {
 					target_vals.clear();
 					//setting REWARDS for the former states
 					last_state.board_state = board_all_states[board_all_states.size() - 1 - i];
-					last_state.value = 1 - double(i) / number_of_states;
+
+					last_state.value = 1 - (double(i) / number_of_states);
+					for (int data_base_index = 0; data_base_index < board_data_base.size()- dummy; data_base_index++) {
+
+						if (last_state.board_state == board_data_base[data_base_index].board_state) {
+							
+							////update values depending on former value
+							last_state.value = (board_data_base[data_base_index].value + last_state.value)/2;
+							board_data_base[data_base_index].value=last_state.value;
+							break;
+						}
+						else if (data_base_index == board_data_base.size()-dummy) {
+
+							last_state.value = 1 - (double(i) / number_of_states);
+							board_data_base[data_base_index].value = last_state.value;
+
+						}
+					}
 
 					input_vals = last_state.board_state;
 				
@@ -464,50 +481,70 @@ int main() {
 
 				circlewon++;
 
-
+			
 
 				
 				break;
 			}
 			else if (who_won == -1) {
 
-				//BoardData last_state;
-				//int number_of_states = board_all_states.size();
+				BoardData last_state;
+				int number_of_states = board_all_states.size();
 
-				//for (int i = 0; i < number_of_states; i++) {
-				//	target_vals.clear();
-				//	//setting REWARDS for the former states
-				//	last_state.board_state = board_all_states[board_all_states.size() - 1 - i];
-				//	last_state.value = -1 +(double(i) / number_of_states);
+				for (int i = 0; i < number_of_states; i++) {
+					target_vals.clear();
+					//setting REWARDS for the former states
+					last_state.board_state = board_all_states[board_all_states.size() - 1 - i];
 
-				//	input_vals = last_state.board_state;
-				//
-				//		cout << "*********************************************" << endl;
-				//		show_vector_vals(": inputs:", input_vals);
-				//	
-				//	my_net.feed_forward(input_vals);
+					for (int data_base_index = 0; data_base_index < board_data_base.size(); data_base_index++) {
 
-				//	my_net.get_results(result_vals);
-				//	
-				//		show_vector_vals("Outputs: ", result_vals);
-				//	
-				//	target_vals.push_back(last_state.value);
-				//
-				//		show_vector_vals("Targets: ", target_vals);
-				//	
-				//	assert(target_vals.size() == topology.back());
+						if (last_state.board_state == board_data_base[data_base_index].board_state) {
+							last_state.value = -1 + (double(i) / number_of_states);
+							//update values depending on former value
+							last_state.value = board_data_base[data_base_index].value + force*(-board_data_base[data_base_index].value + last_state.value);
+							board_data_base[data_base_index].value = last_state.value;
+							break;
+						}
+						else if (data_base_index == board_data_base.size()) {
 
-				//	my_net.back_prop(target_vals);
-				//	
-				//		cout << "Net recent average error: "
-				//			<< my_net.get_recent_average_error() << endl;
-				//		cout << "Done!" << endl;
-				//	
+							last_state.value = -1 + (double(i) / number_of_states);
+							board_data_base[data_base_index].value = last_state.value;
 
-				//}
+						}
+					}
+					
+				
+
+					input_vals = last_state.board_state;
+				
+						cout << "*********************************************" << endl;
+						show_vector_vals(": inputs:", input_vals);
+					
+					my_net.feed_forward(input_vals);
+
+					my_net.get_results(result_vals);
+					
+						show_vector_vals("Outputs: ", result_vals);
+					
+					target_vals.push_back(last_state.value);
+				
+						show_vector_vals("Targets: ", target_vals);
+					
+					assert(target_vals.size() == topology.back());
+
+					my_net.back_prop(target_vals);
+					
+						cout << "Net recent average error: "
+							<< my_net.get_recent_average_error() << endl;
+						cout << "Done!" << endl;
+					
+
+				}
 
 				
 				crosswon++;
+
+			
 
 				
 				break;
@@ -515,8 +552,14 @@ int main() {
 
 			else if (who_won == 0) {
 
+			
+
 				
 			}
+
+
+
+		
 
 			cout << "circle won: " << circlewon << endl;
 			cout << "cross won: " << crosswon << endl;
