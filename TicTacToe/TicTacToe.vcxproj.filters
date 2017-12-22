@@ -36,6 +36,9 @@
     <ClInclude Include="TrainingData.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="GraphicFunctions.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
